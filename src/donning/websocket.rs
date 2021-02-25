@@ -56,21 +56,30 @@ impl DonningWs {
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-        match msg {
-            Ok(ws::Message::Text(text)) => {
-                ctx.text(text);
+        let msg = match msg {
+            Err(_err) => {
+                ctx.stop();
+                return;
             }
-            Ok(ws::Message::Ping(bytes)) => {
+            Ok(msg) => msg
+        };
+
+        match msg {
+            ws::Message::Text(text) => {
+                //ctx.text(text);
+                self.addr.send(server::MessageData{ id: self.id, msg: text });
+            }
+            ws::Message::Ping(bytes) => {
                 self.hb = Instant::now();
                 ctx.pong(&bytes);
             }
-            Ok(ws::Message::Pong(_bytes)) => {
+            ws::Message::Pong(_bytes) => {
                 self.hb = Instant::now();
             }
-            Ok(ws::Message::Binary(bytes)) => {
+            ws::Message::Binary(bytes) => {
                 ctx.binary(bytes);
             }
-            Ok(ws::Message::Close(close_reason)) => {
+            ws::Message::Close(close_reason) => {
                 ctx.close(close_reason);
                 ctx.stop();
             }
@@ -85,6 +94,7 @@ impl Handler<server::Message> for DonningWs {
     type Result = ();
 
     fn handle(&mut self, msg: server::Message, ctx: &mut Self::Context) {
+        println!("{:?}",&msg.0);
         ctx.text(msg.0);
     }
 }
