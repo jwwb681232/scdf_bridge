@@ -40,9 +40,9 @@ impl DonningServer{
     }
 
     fn send_message(&self,message:&str,skip_id:usize){
-        for (id,addr) in self.sessions {
-            if id != skip_id {
-                addr.do_send(Message(message.to_owned()));
+        for (id,addr) in &self.sessions {
+            if id != &skip_id {
+                let _ = addr.do_send(Message(message.to_owned()));
             }
         }
     }
@@ -69,7 +69,7 @@ impl Handler<Connect> for DonningServer{
 impl Handler<Disconnect> for DonningServer{
     type Result = ();
 
-    fn handle(&mut self, msg: Disconnect, ctx: &mut Context<Self>) -> Self::Result {
+    fn handle(&mut self, msg: Disconnect, _ctx: &mut Context<Self>) -> Self::Result {
         self.sessions.remove(&msg.id);
 
         self.send_message("Someone disconnected",0);

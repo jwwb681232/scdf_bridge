@@ -36,7 +36,7 @@ impl Actor for DonningWs {
             .wait(ctx);
     }
 
-    fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
+    fn stopping(&mut self, _ctx: &mut Self::Context) -> Running {
         self.addr.send(server::Disconnect { id: self.id });
         Running::Stop
     }
@@ -78,6 +78,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
                 ctx.stop();
             }
         }
+    }
+}
+
+impl Handler<server::Message> for DonningWs {
+    type Result = ();
+
+    fn handle(&mut self, msg: server::Message, ctx: &mut Self::Context) {
+        ctx.text(msg.0);
     }
 }
 
