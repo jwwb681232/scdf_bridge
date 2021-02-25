@@ -18,7 +18,7 @@ async fn main() -> std::io::Result<()> {
             .data(server.clone())
             .route("/donning", web::get().to(donning::websocket::donning_start))
             .route("/fitness", web::get().to(fitness::websocket::fitness_start))
-            .route("/maze", web::get().to(maze::websocket::fitness_start))
+            .route("/maze", web::get().to(maze::websocket::maze_start))
     })
         .bind("127.0.0.1:8080")?
         .run()

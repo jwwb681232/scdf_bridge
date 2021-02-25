@@ -62,6 +62,6 @@ impl StreamHandler<Result<ws::Message,ws::ProtocolError>> for MazeWs{
     }
 }
 
-pub async fn fitness_start(req:HttpRequest,stream:web::Payload)->Result<HttpResponse,Error>{
+pub async fn maze_start(req:HttpRequest,stream:web::Payload)->Result<HttpResponse,Error>{
     ws::start(MazeWs::new(),&req,stream)
 }
