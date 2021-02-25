@@ -1,12 +1,7 @@
 use actix::prelude::*;
 use rand::{self, rngs::ThreadRng, Rng};
 
-use std::sync::{
-    atomic::{AtomicUsize, Ordering},
-    Arc,
-};
-
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Message)]
 #[rtype(result="()")]
@@ -46,7 +41,7 @@ impl DonningServer{
 
     fn send_message(&self,message:&str,skip_id:usize){
         for (id,addr) in self.sessions {
-            if *id != skip_id {
+            if id != skip_id {
                 addr.do_send(Message(message.to_owned()));
             }
         }

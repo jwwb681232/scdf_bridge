@@ -1,12 +1,14 @@
 use std::time::Instant;
-use actix::{Actor, AsyncContext, ActorContext, StreamHandler};
-use actix_web::{web,Error,HttpRequest, HttpResponse};
+//use actix::{Actor, fut,Addr, AsyncContext, ActorContext, StreamHandler, ContextFutureSpawner, Running};
+use actix::*;
+use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use crate::{HEARTBEAT_INTERVAL, CLIENT_TIMEOUT};
 use crate::donning::server;
 
 
-struct DonningWs {
+pub struct DonningWs {
+    id: usize,
     hb: Instant,
     addr: Addr<server::DonningServer>,
 }
@@ -19,6 +21,24 @@ impl Actor for DonningWs {
 
         let addr = ctx.address();
 
+        self.addr.send(server::Connect {
+            addr: addr.recipient()
+        })
+            .into_actor(self)
+            .then(|res, act, ctx| {
+                match res {
+                    Ok(res) => act.id = res,
+                    _ => ctx.stop(),
+                }
+
+                fut::ready(())
+            })
+            .wait(ctx);
+    }
+
+    fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
+        self.addr.send(server::Disconnect { id: self.id });
+        Running::Stop
     }
 }
 
@@ -61,9 +81,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
     }
 }
 
-pub async fn donning_start(req: HttpRequest, stream: web::Payload,srv: web::Data<Addr<server::ChatServer>>,) ->Result<HttpResponse,Error> {
-    ws::start(DonningWs{
+pub async fn donning_start(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<server::DonningServer>>,
+) -> Result<HttpResponse, Error> {
+    ws::start(DonningWs {
+        id: 0,
         hb: Instant::now(),
-        addr: srv.get_ref().clone()
+        addr: srv.get_ref().clone(),
     }, &req, stream)
 }
