@@ -3,10 +3,12 @@ use actix::{Actor, AsyncContext, ActorContext, StreamHandler};
 use actix_web::{web,Error,HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use crate::{HEARTBEAT_INTERVAL, CLIENT_TIMEOUT};
+use crate::donning::server;
 
 
 struct DonningWs {
     hb: Instant,
+    addr: Addr<server::DonningServer>,
 }
 
 impl Actor for DonningWs {
@@ -14,16 +16,13 @@ impl Actor for DonningWs {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.hb_start(ctx);
+
+        let addr = ctx.address();
+
     }
 }
 
 impl DonningWs {
-    fn new() -> Self {
-        Self {
-            hb: Instant::now(),
-        }
-    }
-
     fn hb_start(&self, ctx: &mut <Self as Actor>::Context) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
@@ -62,6 +61,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
     }
 }
 
-pub async fn donning_start(req: HttpRequest, stream: web::Payload) ->Result<HttpResponse,Error> {
-    ws::start(DonningWs::new(),&req,stream)
+pub async fn donning_start(req: HttpRequest, stream: web::Payload,srv: web::Data<Addr<server::ChatServer>>,) ->Result<HttpResponse,Error> {
+    ws::start(DonningWs{
+        hb: Instant::now(),
+        addr: srv.get_ref().clone()
+    }, &req, stream)
 }
