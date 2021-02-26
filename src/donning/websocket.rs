@@ -1,11 +1,9 @@
 use std::time::Instant;
-//use actix::{Actor, fut,Addr, AsyncContext, ActorContext, StreamHandler, ContextFutureSpawner, Running};
 use actix::*;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use crate::{HEARTBEAT_INTERVAL, CLIENT_TIMEOUT};
 use crate::donning::server;
-
 
 pub struct DonningWs {
     id: usize,
@@ -65,7 +63,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
 
         match msg {
             ws::Message::Text(text) => {
-                println!("{:?}",self.id);
                 self.addr.do_send(server::MessageData{ id: self.id, msg: text });
             }
             ws::Message::Ping(bytes) => {
