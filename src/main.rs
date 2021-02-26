@@ -2,6 +2,9 @@ use std::time::Duration;
 use actix_web::{HttpServer, App, web};
 use actix::Actor;
 
+#[macro_use]
+extern crate serde_json;
+
 mod donning;
 mod fitness;
 mod maze;

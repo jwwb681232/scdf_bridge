@@ -30,13 +30,15 @@ pub struct MessageData{
 pub struct DonningServer{
     sessions:HashMap<usize,Recipient<Message>>,
     rng:ThreadRng,
+    trainees:Vec<String>,
 }
 
 impl DonningServer{
     pub fn new()->Self{
         Self{
             sessions: HashMap::new(),
-            rng: rand::thread_rng()
+            rng: rand::thread_rng(),
+            trainees:Vec::new(),
         }
     }
 
@@ -81,6 +83,31 @@ impl Handler<MessageData> for DonningServer{
     type Result = ();
 
     fn handle(&mut self, msg: MessageData, _ctx: &mut Self::Context) -> Self::Result {
-        self.send_message(msg.msg.as_str(),msg.id);
+
+        let data: serde_json::Value = serde_json::from_str(&msg.msg).unwrap();
+
+
+
+        let mut has_trainees_ids:Vec<u64> = Vec::new();
+
+
+
+        for trainee in &self.trainees {
+            let has_trainee: serde_json::Value = serde_json::from_str(trainee.as_str()).unwrap();
+            has_trainees_ids.push(has_trainee["id"].as_u64().unwrap());
+        }
+
+
+        if !has_trainees_ids.contains(&data["data"]["id"].as_u64().unwrap()) {
+            self.trainees.push(data["data"].to_string())
+        }
+
+
+
+
+
+        println!("{:?}",self.trainees);
+
+        self.send_message(json!(&self.trainees),msg.id);
     }
 }
