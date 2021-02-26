@@ -26,6 +26,7 @@ pub struct MessageData{
     pub msg:String,
 }
 
+#[derive(Debug)]
 pub struct DonningServer{
     sessions:HashMap<usize,Recipient<Message>>,
     rng:ThreadRng,
@@ -39,10 +40,9 @@ impl DonningServer{
         }
     }
 
-    fn send_message(&self,message:&str,skip_id:usize){
-        println!("{:?}",message);
-        for (id,addr) in &self.sessions {
-            if id != &skip_id {
+    fn send_message(&self, message: &str, skip_id: usize) {
+        for (id, addr) in &self.sessions {
+            if *id != skip_id {
                 let _ = addr.do_send(Message(message.to_owned()));
             }
         }
@@ -73,7 +73,7 @@ impl Handler<Disconnect> for DonningServer{
     fn handle(&mut self, msg: Disconnect, _ctx: &mut Context<Self>) -> Self::Result {
         self.sessions.remove(&msg.id);
 
-        self.send_message("Someone disconnected",0);
+        self.send_message("Someone disconnected",msg.id);
     }
 }
 
@@ -81,7 +81,6 @@ impl Handler<MessageData> for DonningServer{
     type Result = ();
 
     fn handle(&mut self, msg: MessageData, _ctx: &mut Self::Context) -> Self::Result {
-        println!("{:?}",msg.msg);
         self.send_message(msg.msg.as_str(),msg.id);
     }
 }

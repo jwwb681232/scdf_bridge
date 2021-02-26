@@ -23,8 +23,7 @@ impl Actor for DonningWs {
 
         self.addr.send(server::Connect {
             addr: addr.recipient()
-        })
-            .into_actor(self)
+        }).into_actor(self)
             .then(|res, act, ctx| {
                 match res {
                     Ok(res) => act.id = res,
@@ -37,7 +36,7 @@ impl Actor for DonningWs {
     }
 
     fn stopping(&mut self, _ctx: &mut Self::Context) -> Running {
-        self.addr.send(server::Disconnect { id: self.id });
+        self.addr.do_send(server::Disconnect { id: self.id });
         Running::Stop
     }
 }
@@ -66,8 +65,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for DonningWs {
 
         match msg {
             ws::Message::Text(text) => {
-                //ctx.text(text);
-                self.addr.send(server::MessageData{ id: self.id, msg: text });
+                println!("{:?}",self.id);
+                self.addr.do_send(server::MessageData{ id: self.id, msg: text });
             }
             ws::Message::Ping(bytes) => {
                 self.hb = Instant::now();
@@ -94,7 +93,6 @@ impl Handler<server::Message> for DonningWs {
     type Result = ();
 
     fn handle(&mut self, msg: server::Message, ctx: &mut Self::Context) {
-        println!("{:?}",&msg.0);
         ctx.text(msg.0);
     }
 }
